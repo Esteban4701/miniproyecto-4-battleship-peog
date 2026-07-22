@@ -1,4 +1,4 @@
-package com.example.battleship.view;
+package com.example.battleship;
 
 /**
  * Visual state of an individual segment (cell) of a ship.

@@ -1,9 +1,10 @@
 package com.example.battleship.view.ships;
 
+import com.example.battleship.SegmentState;
+import com.example.battleship.model.ship.Orientation;
 import com.example.battleship.view.Config3D;
-import com.example.battleship.view.Orientation;
-import com.example.battleship.view.SegmentState;
 import com.example.battleship.view.assets.WreckageDebris3D;
+
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;

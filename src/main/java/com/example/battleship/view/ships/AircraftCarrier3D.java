@@ -1,7 +1,8 @@
 package com.example.battleship.view.ships;
 
+import com.example.battleship.model.ship.Orientation;
 import com.example.battleship.view.Config3D;
-import com.example.battleship.view.Orientation;
+
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Box;

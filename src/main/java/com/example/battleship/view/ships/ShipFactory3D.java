@@ -1,6 +1,7 @@
 package com.example.battleship.view.ships;
 
-import com.example.battleship.view.Orientation;
+import com.example.battleship.model.ship.Orientation;
+import com.example.battleship.model.ship.ShipType;
 
 /**
  * Factory for 3D ships. Applies the <b>Factory Method</b> pattern to

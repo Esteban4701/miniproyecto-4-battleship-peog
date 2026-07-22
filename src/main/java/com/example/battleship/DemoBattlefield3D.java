@@ -1,9 +1,10 @@
 package com.example.battleship;
 
+import com.example.battleship.model.ship.Orientation;
+import com.example.battleship.model.ship.ShipType;
 import com.example.battleship.view.BattlefieldView3D;
-import com.example.battleship.view.Orientation;
 import com.example.battleship.view.ships.ShipFactory3D;
-import com.example.battleship.view.ships.ShipType;
+
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
