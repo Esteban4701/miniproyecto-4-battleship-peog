@@ -1,8 +1,7 @@
 package com.example.battleship.model.ship;
 
-import com.example.battleship.model.board.Board;
 import com.example.battleship.model.board.Position;
-
+import com.example.battleship.model.board.Board;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -12,7 +11,8 @@ import java.util.List;
  * A ship placed on a {@link Board}: a type, a starting {@link Position},
  * an {@link Orientation}, and per-segment hit tracking.
  * <p>
- * A ship is immutable in terms of where it sits -- the
+ * A ship is immutable in terms of where it sits (per HU-1, "Una vez
+ * colocados, los barcos no pueden ser movidos ni modificados") -- the
  * only thing that ever changes after construction is which of its
  * segments have been hit.
  * </p>
@@ -114,5 +114,26 @@ public class Ship implements Serializable {
 
     public Orientation getOrientation() {
         return orientation;
+    }
+
+    /**
+     * How many columns this ship's footprint spans: its full size when
+     * {@link Orientation#HORIZONTAL}, just 1 when {@link Orientation#VERTICAL}.
+     * Together with {@link #getDepthInRows()}, this is the single
+     * source of truth for how big a ship's footprint is on the grid --
+     * every bound/overlap check should be built from these two numbers
+     * plus {@link #getOrigin()}, rather than re-deriving them separately.
+     */
+    public int getWidthInColumns() {
+        return orientation == Orientation.HORIZONTAL ? type.getSizeInCells() : 1;
+    }
+
+    /**
+     * How many rows this ship's footprint spans: its full size when
+     * {@link Orientation#VERTICAL}, just 1 when {@link Orientation#HORIZONTAL}.
+     * See {@link #getWidthInColumns()}.
+     */
+    public int getDepthInRows() {
+        return orientation == Orientation.VERTICAL ? type.getSizeInCells() : 1;
     }
 }

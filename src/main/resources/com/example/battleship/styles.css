@@ -1,0 +1,45 @@
+.root-stack {
+    -fx-background-color: transparent;
+}
+
+.start-menu-pane {
+    -fx-background-color: rgba(8, 12, 20, 0.72);
+}
+
+.title-label {
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.hint-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #cfd6e0;
+}
+
+.placement-hud-pane {
+    -fx-background-color: transparent;
+}
+
+.hud-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 6, 0.4, 0, 1);
+}
+
+.hud-sublabel {
+    -fx-font-size: 13px;
+    -fx-text-fill: #cfd6e0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 6, 0.4, 0, 1);
+}
+
+.game-over-pane {
+    -fx-background-color: rgba(0, 0, 0, 0.65);
+}
+
+.game-over-label {
+    -fx-font-size: 48px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}

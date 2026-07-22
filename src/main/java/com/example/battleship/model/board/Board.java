@@ -4,7 +4,6 @@ import com.example.battleship.model.ShotResult;
 import com.example.battleship.model.exception.CellAlreadyShotException;
 import com.example.battleship.model.exception.InvalidShipPlacementException;
 import com.example.battleship.model.exception.OutOfBoardException;
-import com.example.battleship.model.ship.Orientation;
 import com.example.battleship.model.ship.Ship;
 
 import java.io.IOException;
@@ -69,16 +68,12 @@ public class Board implements Serializable {
             throw new InvalidShipPlacementException(
                     "Ship at " + ship.getOrigin().toLabel() + " would extend past the edge of the board", e);
         }
-
-        List<Position> occupiedPositions = ship.getOccupiedPositions();
-        for (Position position : occupiedPositions) {
-            if (getCell(position).getState() == CellState.SHIP) {
-                throw new InvalidShipPlacementException(
-                        "Ship placement overlaps an existing ship at " + position.toLabel());
-            }
+        if (overlapsExistingShip(ship)) {
+            throw new InvalidShipPlacementException(
+                    "Ship placement at " + ship.getOrigin().toLabel() + " overlaps an existing ship");
         }
 
-        for (Position position : occupiedPositions) {
+        for (Position position : ship.getOccupiedPositions()) {
             Cell cell = getCell(position);
             cell.setState(CellState.SHIP);
             cell.setOccupyingShip(ship);
@@ -90,15 +85,53 @@ public class Board implements Serializable {
         }
     }
 
+    /**
+     * Checks whether {@code ship} could be placed on this board right
+     * now, without actually placing it and without throwing on failure.
+     * Meant for live placement previews, so the player can be shown
+     * whether their current cursor position is valid before they click.
+     *
+     * @param ship a ship that has not been placed anywhere yet
+     * @return {@code true} if {@link #placeShip} would currently succeed for this exact ship
+     */
+    public boolean canPlaceShip(Ship ship) {
+        return fitsWithinBoard(ship) && !overlapsExistingShip(ship);
+    }
+
     private void validateWithinBounds(Ship ship) throws OutOfBoardException {
-        int size = ship.getType().getSizeInCells();
-        Position origin = ship.getOrigin();
-        boolean horizontal = ship.getOrientation() == Orientation.HORIZONTAL;
-        int lastRow = horizontal ? origin.row() : origin.row() + size - 1;
-        int lastColumn = horizontal ? origin.column() + size - 1 : origin.column();
-        if (lastRow >= SIZE || lastColumn >= SIZE) {
-            throw new OutOfBoardException(lastRow, lastColumn);
+        if (fitsWithinBoard(ship)) {
+            return;
         }
+        int lastRow = ship.getOrigin().row() + ship.getDepthInRows() - 1;
+        int lastColumn = ship.getOrigin().column() + ship.getWidthInColumns() - 1;
+        throw new OutOfBoardException(lastRow, lastColumn);
+    }
+
+    /**
+     * Whether every cell {@code ship} would occupy is within the
+     * board's 0-9 range, using {@link Ship#getWidthInColumns()} and
+     * {@link Ship#getDepthInRows()} as the single source of truth for
+     * the ship's footprint -- deliberately computed with plain
+     * arithmetic rather than by calling {@link Ship#getOccupiedPositions()}:
+     * that method builds a {@link Position} for every segment, and
+     * {@code Position}'s own constructor rejects out-of-range
+     * coordinates -- exactly the case being checked for here, so it
+     * can't be used to check for it.
+     */
+    private boolean fitsWithinBoard(Ship ship) {
+        int lastRow = ship.getOrigin().row() + ship.getDepthInRows() - 1;
+        int lastColumn = ship.getOrigin().column() + ship.getWidthInColumns() - 1;
+        return lastRow < SIZE && lastColumn < SIZE;
+    }
+
+    /** @throws IllegalArgumentException indirectly if {@code ship} doesn't fit -- always check {@link #fitsWithinBoard} first. */
+    private boolean overlapsExistingShip(Ship ship) {
+        for (Position position : ship.getOccupiedPositions()) {
+            if (getCell(position).getState() == CellState.SHIP) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -185,6 +218,7 @@ public class Board implements Serializable {
      * always recreated empty; the controller re-attaches itself after
      * loading.
      */
+    @Serial
     private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
         inputStream.defaultReadObject();
         listeners = new ArrayList<>();

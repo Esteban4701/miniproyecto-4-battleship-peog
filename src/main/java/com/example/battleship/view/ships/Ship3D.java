@@ -96,8 +96,28 @@ public abstract class Ship3D extends Group {
         setTranslateX(anchorColumn * Config3D.CELL_SIZE);
         setTranslateZ(anchorRow * Config3D.CELL_SIZE);
         if (orientation == Orientation.VERTICAL) {
-            setRotationAxis(Rotate.Y_AXIS);
-            setRotate(90);
+            // An explicit Rotate in the transforms list, not the node's
+            // own rotate/rotationAxis properties: the node's own
+            // rotate pivots around the CENTER of its bounds, which for
+            // a multi-cell ship is nowhere near its anchor cell (the
+            // bow, at local x=0) -- rotating around that off-center
+            // point shifted the whole ship away from its anchor cell
+            // toward the board's center. A Rotate transform's pivot
+            // defaults to (0,0,0), which is exactly the anchor cell.
+            //
+            // -90, not +90: a +90 rotation maps the hull's local +X axis
+            // (the direction later segments/index 1,2,3... extend
+            // toward) onto world -Z, which is DECREASING row -- the
+            // opposite of what the model does. Ship.getOccupiedPositions()
+            // (via Position.shift) always extends a VERTICAL ship toward
+            // INCREASING row from the origin. With +90 the ship visually
+            // occupied the rows on the other side of its anchor cell
+            // from the ones the model actually validated/marked as
+            // occupied -- a real ship could look like it had plenty of
+            // room while the model was checking completely different,
+            // already-invalid cells. -90 maps local +X to world +Z,
+            // matching the model's direction exactly.
+            getTransforms().add(new Rotate(-90, Rotate.Y_AXIS));
         }
     }
 
@@ -131,7 +151,10 @@ public abstract class Ship3D extends Group {
      * Sinks the ship: removes the individual per-cell hit markers and
      * recolors the whole hull in a single pass, so the result is always
      * the complete ship silhouette in the "sunk" material -- never a
-     * grid-chopped patchwork.
+     * grid-chopped patchwork. Also always reveals the hull, even if it
+     * was hidden (see {@link #setHullVisible}) -- once a ship is fully
+     * destroyed, the opponent gets to see the whole wreck as
+     * confirmation, whether or not the "cheat" reveal (HU-3) is active.
      */
     private void markSunk() {
         for (int i = 0; i < sizeInCells; i++) {
@@ -143,6 +166,42 @@ public abstract class Ship3D extends Group {
             }
         }
         applyMaterialRecursively(hull, Config3D.sunkMaterial());
+        hull.setVisible(true);
+    }
+
+    /**
+     * Shows or hides just this ship's hull -- not the whole node, so
+     * hit markers ({@link #markHit}) stay visible even while the hull
+     * itself is hidden. Used for HU-3: the machine's fleet starts
+     * hidden and can be revealed (all at once, via the "cheat" code) or
+     * per-ship once it's sunk (see {@link #markSunk}).
+     *
+     * @param visible {@code true} to show the hull, {@code false} to hide it
+     */
+    public void setHullVisible(boolean visible) {
+        hull.setVisible(visible);
+    }
+
+    /**
+     * Recolors the whole hull to a flat, semi-bright "ghost" material,
+     * for showing this ship as a placement preview.
+     * <p>
+     * Deliberately does NOT use {@code setOpacity()}: real transparency
+     * on a compound 3D {@code Group} with many overlapping meshes,
+     * inside a depth-buffered {@code SubScene}, renders unreliably --
+     * in practice the whole node can simply fail to appear. Swapping
+     * every material to one flat color, the same technique already
+     * used by {@link #markSunk()}, stays fully opaque and renders
+     * exactly as reliably as any other ship state.
+     * </p>
+     */
+    public void markAsPreview() {
+        applyMaterialRecursively(hull, Config3D.previewMaterial());
+    }
+
+    /** Recolors the whole hull red, for showing this ship as a preview that can't actually be placed here. */
+    public void markAsInvalidPreview() {
+        applyMaterialRecursively(hull, Config3D.invalidPreviewMaterial());
     }
 
     /** Recursively applies a material to every {@code Shape3D} found under {@code node}. */
