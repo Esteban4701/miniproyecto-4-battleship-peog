@@ -1,7 +1,7 @@
 package com.example.battleship.view.assets;
 
 import com.example.battleship.view.Config3D;
-import com.example.battleship.view.ships.Ship3D;
+
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;

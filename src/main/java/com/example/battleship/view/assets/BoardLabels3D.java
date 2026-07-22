@@ -1,6 +1,8 @@
 package com.example.battleship.view.assets;
 
 import com.example.battleship.view.BoardView3D;
+import com.example.battleship.view.Config3D;
+
 import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
@@ -179,10 +181,10 @@ public final class BoardLabels3D {
      */
     private static MeshView buildFlatQuadForMachine(double width, double depth) {
         return buildFlatQuad(width, depth, new float[]{
-                1, 0,
                 0, 0,
-                0, 1,
+                1, 0,
                 1, 1,
+                0, 1,
         });
     }
 

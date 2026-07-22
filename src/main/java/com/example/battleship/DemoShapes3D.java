@@ -1,11 +1,12 @@
 package com.example.battleship;
 
+import com.example.battleship.model.ship.Orientation;
+import com.example.battleship.model.ship.ShipType;
 import com.example.battleship.view.BoardView3D;
-import com.example.battleship.view.Orientation;
 import com.example.battleship.view.assets.ShotMark3D;
 import com.example.battleship.view.ships.Ship3D;
 import com.example.battleship.view.ships.ShipFactory3D;
-import com.example.battleship.view.ships.ShipType;
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;

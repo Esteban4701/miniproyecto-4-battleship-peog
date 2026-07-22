@@ -49,4 +49,18 @@ public final class Config3D {
         m.setSpecularColor(Color.rgb(60, 0, 0));
         return m;
     }
+
+    /** Flat, pale cyan "ghost" look for a ship placement preview -- opaque on purpose, see {@code Ship3D#markAsPreview}. */
+    public static PhongMaterial previewMaterial() {
+        PhongMaterial m = new PhongMaterial(Color.rgb(150, 220, 230));
+        m.setSpecularColor(Color.WHITE);
+        return m;
+    }
+
+    /** Flat red "this doesn't fit here" look for an invalid placement preview. */
+    public static PhongMaterial invalidPreviewMaterial() {
+        PhongMaterial m = new PhongMaterial(Color.rgb(210, 60, 60));
+        m.setSpecularColor(Color.rgb(255, 150, 150));
+        return m;
+    }
 }

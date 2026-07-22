@@ -3,6 +3,7 @@ package com.example.battleship.view;
 import com.example.battleship.view.assets.BoardLabels3D;
 import com.example.battleship.view.assets.HoverMarker3D;
 import com.example.battleship.view.assets.Water3D;
+
 import com.example.battleship.view.ships.Ship3D;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
@@ -316,6 +317,20 @@ public class BattlefieldView3D extends SubScene {
     /** Adds any other node (e.g. a shot mark) to the machine's board. */
     public void addToMachineBoard(Node node) {
         machineBoardGroup.getChildren().add(node);
+    }
+
+    /**
+     * @return the player board's own group -- controllers use this to tell,
+     *         via {@code node.getParent()}, whether a picked node belongs to
+     *         the player's board or the machine's
+     */
+    public Group getPlayerBoardGroup() {
+        return playerBoardGroup;
+    }
+
+    /** @return the machine board's own group; see {@link #getPlayerBoardGroup()} */
+    public Group getMachineBoardGroup() {
+        return machineBoardGroup;
     }
 
     /** Glides the camera from whichever dome it's currently over to the other board's dome. */
