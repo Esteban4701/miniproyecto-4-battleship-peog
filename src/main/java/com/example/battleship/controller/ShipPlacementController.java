@@ -109,6 +109,7 @@ public class ShipPlacementController {
         }
     }
 
+    /** A click on a player-board water cell attempts to place the current ship there; anything else is ignored. */
     private void onCellClicked(MouseEvent event) {
         if (isComplete()) {
             return;
@@ -121,6 +122,7 @@ public class ShipPlacementController {
         attemptPlacement(water.getRow(), water.getColumn());
     }
 
+    /** Moves the preview ghost to follow the mouse while it's over a player-board water cell, and clears it otherwise. */
     private void onMouseMoved(MouseEvent event) {
         if (isComplete()) {
             clearPreview();
@@ -129,19 +131,6 @@ public class ShipPlacementController {
         PickResult pick = event.getPickResult();
         Node picked = pick.getIntersectedNode();
         if (picked instanceof Water3D water && water.getParent() == boardGroup) {
-            // TEMPORARY diagnostic: confirms the view (this exact Water3D
-            // tile, wherever it's drawn on screen) and the model (the
-            // row/column Board will actually validate against) agree.
-            // Move the mouse across the board and compare this printout
-            // against the cell you're actually looking at -- count from
-            // the corner where column letter "A" is (column 0) and from
-            // whichever edge the board starts at (row 0), NOT from the
-            // on-screen number labels (those are known to be reversed).
-            // Remove once confirmed.
-            if (!Integer.valueOf(water.getRow()).equals(previewRow)
-                    || !Integer.valueOf(water.getColumn()).equals(previewColumn)) {
-                System.out.println("[hover] model says: row=" + water.getRow() + ", column=" + water.getColumn());
-            }
             previewRow = water.getRow();
             previewColumn = water.getColumn();
             rebuildPreview();
@@ -150,6 +139,15 @@ public class ShipPlacementController {
         }
     }
 
+    /**
+     * Tries to place the current ship (front of {@link #remainingTypes})
+     * at {@code (row, column)}. On success, mirrors it into the 3D
+     * scene, advances the queue, and notifies listeners -- either
+     * {@link ShipPlacementListener#onShipPlaced} or, once the whole
+     * fleet is placed, {@link ShipPlacementListener#onFleetPlacementComplete}
+     * as well. On failure, notifies {@link ShipPlacementListener#onPlacementRejected}
+     * instead, and nothing about the board or queue changes.
+     */
     private void attemptPlacement(int row, int column) {
         ShipType type = remainingTypes.get(0);
         try {
@@ -213,12 +211,14 @@ public class ShipPlacementController {
         previewShip = ghost;
     }
 
+    /** Forgets the currently hovered cell and removes the preview ghost, if there is one. */
     private void clearPreview() {
         previewRow = null;
         previewColumn = null;
         removePreviewNode();
     }
 
+    /** Removes the current preview ghost node from the scene, if one is showing. */
     private void removePreviewNode() {
         if (previewShip != null) {
             boardGroup.getChildren().remove(previewShip);
@@ -236,6 +236,7 @@ public class ShipPlacementController {
         return isComplete() ? null : remainingTypes.get(0);
     }
 
+    /** @return the orientation the next ship will be placed with */
     public Orientation getCurrentOrientation() {
         return currentOrientation;
     }
@@ -245,10 +246,12 @@ public class ShipPlacementController {
         return Collections.unmodifiableMap(shipViews);
     }
 
+    /** @param listener a listener to notify of future placement progress */
     public void addListener(ShipPlacementListener listener) {
         listeners.add(listener);
     }
 
+    /** @param listener a previously added listener to stop notifying */
     public void removeListener(ShipPlacementListener listener) {
         listeners.remove(listener);
     }
@@ -260,6 +263,7 @@ public class ShipPlacementController {
      * reads as a named, self-contained unit of keyboard handling.
      */
     private class RotateKeyHandler implements EventHandler<KeyEvent> {
+        /** {@inheritDoc} */
         @Override
         public void handle(KeyEvent event) {
             if (event.getCode() != KeyCode.R) {

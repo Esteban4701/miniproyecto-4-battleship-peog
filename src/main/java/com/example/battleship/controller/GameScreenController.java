@@ -5,7 +5,6 @@ import com.example.battleship.controller.event.CombatAdapter;
 import com.example.battleship.controller.event.ShipPlacementAdapter;
 import com.example.battleship.controller.persistence.SavedGameRepository;
 import com.example.battleship.model.Game;
-import com.example.battleship.model.ship.Orientation;
 import com.example.battleship.model.player.Player;
 import com.example.battleship.model.ship.Ship;
 import com.example.battleship.model.ship.ShipType;
@@ -86,12 +85,14 @@ public class GameScreenController {
         refreshContinueButtonState();
     }
 
+    /** Enables/disables "Continuar" (and updates its tooltip) to match whether a saved game currently exists on disk. */
     private void refreshContinueButtonState() {
         boolean hasSavedGame = SavedGameRepository.hasSavedGame();
         continueButton.setDisable(!hasSavedGame);
         continueButton.setTooltip(new Tooltip(hasSavedGame ? "Continuar la partida guardada" : "No hay partida guardada"));
     }
 
+    /** "Nuevo Juego": validates the nickname field, then starts HU-1 (fleet placement) if it's non-blank. */
     @FXML
     private void onNewGameClicked() {
         String nickname = nicknameField.getText();
@@ -128,6 +129,7 @@ public class GameScreenController {
         battlefield.getCameraRig().attachDragControls(battlefield);
     }
 
+    /** "Volver al inicio": reloads a completely fresh main screen, the simplest reliable way to reset every piece of state at once. */
     @FXML
     private void onBackToMenuClicked() {
         try {
@@ -138,6 +140,7 @@ public class GameScreenController {
         }
     }
 
+    /** Switches to {@link GamePhase#PLACEMENT}, creates a fresh {@link MainGameController}, and wires up its placement/combat events. */
     private void startPlacementPhase(String nickname) {
         phase = GamePhase.PLACEMENT;
         setPaneVisible(startMenuPane, false);
@@ -168,16 +171,16 @@ public class GameScreenController {
         mainGameController.start();
     }
 
+    /** Refreshes the placement HUD label to name the next ship in the queue, or leaves it as-is once the fleet is fully placed. */
     private void updatePlacementInstruction() {
         ShipType type = mainGameController.getPlacementController().getCurrentShipType();
         if (type == null) {
             return;
         }
-        Orientation orientation = mainGameController.getPlacementController().getCurrentOrientation();
-        String orientationLabel = orientation == Orientation.HORIZONTAL ? "horizontal" : "vertical";
-        placementInstructionLabel.setText("Coloca: " + shipDisplayName(type) + " (" + orientationLabel + ")");
+        placementInstructionLabel.setText("Coloca: " + shipDisplayName(type));
     }
 
+    /** @return the Spanish display name for a ship type, for the placement HUD */
     private String shipDisplayName(ShipType type) {
         return switch (type) {
             case AIRCRAFT_CARRIER -> "Portaaviones";
@@ -187,6 +190,7 @@ public class GameScreenController {
         };
     }
 
+    /** Switches to {@link GamePhase#COMBAT}: hides the placement HUD and enables free camera dragging. */
     private void startCombatPhase() {
         phase = GamePhase.COMBAT;
         setPaneVisible(placementHudPane, false);
@@ -196,6 +200,7 @@ public class GameScreenController {
         battlefield.getCameraRig().attachDragControls(battlefield);
     }
 
+    /** Switches to {@link GamePhase#GAME_OVER} and shows the win/loss overlay, naming whoever actually won. */
     private void showGameOver(Player winner) {
         phase = GamePhase.GAME_OVER;
         boolean playerWon = winner == mainGameController.getGame().getHuman();
@@ -203,11 +208,19 @@ public class GameScreenController {
         setPaneVisible(gameOverPane, true);
     }
 
+    /**
+     * Shows or hides an overlay pane, keeping its layout state in sync
+     * so a hidden pane doesn't still reserve space or intercept clicks.
+     *
+     * @param pane    the pane to show or hide
+     * @param visible {@code true} to show it, {@code false} to hide it
+     */
     private void setPaneVisible(Node pane, boolean visible) {
         pane.setVisible(visible);
         pane.setManaged(visible);
     }
 
+    /** @return which phase the screen is currently in */
     public GamePhase getPhase() {
         return phase;
     }
