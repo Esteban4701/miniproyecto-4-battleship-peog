@@ -5,7 +5,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 /**
- * Watches keyboard input for the Konami Code (Up, Up, Down, Down, Left,
+ * Watches keyboard input for the konami Code (Up, Up, Down, Down, Left,
  * Right, Left, Right, B, A) and runs a callback once the whole
  * sequence is entered correctly, in order -- this is what activates
  * HU-3's "cheat" reveal of the machine's fleet.
@@ -34,6 +34,7 @@ public class KonamiCodeDetector implements EventHandler<KeyEvent> {
         this.onCodeEntered = onCodeEntered;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void handle(KeyEvent event) {
         KeyCode pressed = event.getCode();

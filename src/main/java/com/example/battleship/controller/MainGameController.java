@@ -39,7 +39,7 @@ import java.util.Random;
  */
 public class MainGameController {
 
-    private final Game game;
+    private Game game;
     private final BattlefieldView3D view;
     private final Node pickSurface;
 
@@ -100,7 +100,11 @@ public class MainGameController {
     /**
      * Jumps straight into combat with an already-placed, already
      * in-progress game (HU-5). Only valid on a controller created with
-     * the "resume a saved game" constructor.
+     * the "resume a saved game" constructor. If the save happened
+     * mid-way through the machine's turn, this also kicks the machine
+     * back into motion (see {@link CombatController#resumeIfMachinesTurn});
+     * otherwise the game would sit idle forever, with neither side able
+     * to act.
      */
     public void resume() {
         Map<Ship, Ship3D> playerShipViews = rebuildBoardView(game.getHuman().getOwnBoard(), view.getPlayerBoardGroup(), false);
@@ -109,10 +113,12 @@ public class MainGameController {
         combatController = new CombatController(game, view, playerShipViews, machineShipViews);
         combatController.attachTo(pickSurface);
         combatController.focusCameraForCurrentTurn();
+        combatController.resumeIfMachinesTurn();
 
         listenForKonamiCode();
     }
 
+    /** Registers the Konami Code (HU-3) as a scene-wide key listener, active for the rest of the game regardless of which controller currently owns mouse input. */
     private void listenForKonamiCode() {
         Scene scene = pickSurface.getScene();
         if (scene != null) {
@@ -164,6 +170,7 @@ public class MainGameController {
         return shipViews;
     }
 
+    /** Walks every cell of {@code board} and re-applies whatever shot outcome it already recorded (miss, hit, or sunk) to the matching 3D shapes. */
     private void replayShotMarks(Board board, Map<Ship, Ship3D> shipViews, Group boardGroup) {
         for (int row = 0; row < Board.SIZE; row++) {
             for (int column = 0; column < Board.SIZE; column++) {
@@ -178,6 +185,7 @@ public class MainGameController {
         }
     }
 
+    /** Applies a single already-recorded hit/sunk cell to the 3D shape of whichever ship occupies it, via {@link Ship3D#markHit}. */
     private void replayHit(Cell cell, Map<Ship, Ship3D> shipViews, Position position) {
         Ship ship = cell.getOccupyingShip();
         if (ship == null) {
@@ -208,6 +216,7 @@ public class MainGameController {
         }
     }
 
+    /** @return the game being played */
     public Game getGame() {
         return game;
     }

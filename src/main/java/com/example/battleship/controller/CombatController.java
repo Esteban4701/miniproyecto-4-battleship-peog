@@ -15,14 +15,13 @@ import com.example.battleship.view.assets.ShotMark3D;
 import com.example.battleship.view.assets.Water3D;
 import com.example.battleship.view.ships.Ship3D;
 
-import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.util.Duration;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +44,14 @@ import java.util.Map;
  * Also drives HU-5's autosave: every resolved shot writes the game to
  * disk via {@link SavedGameRepository} (see {@link #autoSave}), and the
  * save is deleted once the match actually ends.
+ * </p>
+ * <p>
+ * The pause before each machine shot ({@link #scheduleNextMachineShot})
+ * runs on its own dedicated background thread, which then hands control
+ * back to the JavaFX Application Thread via {@link javafx.application.Platform#runLater}
+ * to actually resolve the shot -- the standard, correct way to combine
+ * a background thread with JavaFX, since the scene graph may only ever
+ * be touched from its own thread.
  * </p>
  */
 public class CombatController {
@@ -71,7 +78,7 @@ public class CombatController {
     /**
      * @param game              the game being played
      * @param view              the 3D battlefield
-     * @param playerShipViews   the human's ships, mapped to their 3D shapes (from {@link ShipPlacementController})
+     * @param playerShipViews   the human ships, mapped to their 3D shapes (from {@link ShipPlacementController})
      * @param machineShipViews  the machine's ships, mapped to their 3D shapes (from {@link FleetViewBuilder})
      */
     public CombatController(Game game, BattlefieldView3D view,
@@ -87,6 +94,23 @@ public class CombatController {
         game.getHuman().getOwnBoard().addListener(new HumanBoardListener());
 
         view.getMachineBoardGroup().getChildren().add(targetMarker);
+    }
+
+    /**
+     * Kicks off the machine's turn if the game is currently in the
+     * middle of it. Needed for HU-5's "Continuar": a saved game could
+     * have been exited at exactly the moment between the human's last
+     * shot (which passed the turn to the machine) and the machine
+     * actually firing back. Without this call, nothing would ever
+     * prompt the machine to take that turn -- the human can't fire
+     * either, since {@link #onCellClicked} already correctly refuses to
+     * act out of turn -- and the game would simply sit idle forever.
+     * Does nothing if it's currently the human's turn.
+     */
+    public void resumeIfMachinesTurn() {
+        if (game.getCurrentTurn() == Turn.MACHINE) {
+            scheduleNextMachineShot();
+        }
     }
 
     /**
@@ -140,13 +164,19 @@ public class CombatController {
         afterShotResolved();
     }
 
+    /**
+     * Runs after the human shot resolves: ends the match if that shot
+     * finished off the machine's whole fleet, otherwise auto saves,
+     * notifies listeners of the (possible) turn change, repositions the
+     * camera, and hands off to the machine if it's now its turn.
+     */
     private void afterShotResolved() {
-        autoSave();
         if (game.isOver()) {
             deleteSaveOnGameOver();
             notifyGameOver();
             return;
         }
+        autoSave();
         notifyTurnChanged();
         focusCameraForCurrentTurn();
         if (game.getCurrentTurn() == Turn.MACHINE) {
@@ -154,49 +184,75 @@ public class CombatController {
         }
     }
 
+    /**
+     * Waits {@link #MACHINE_SHOT_DELAY} on a dedicated background
+     * thread (so the delay never ties up the JavaFX Application Thread,
+     * even though nothing else happens to need it during those few
+     * seconds), then hands control back to the FX thread via
+     * {@link Platform#runLater} to actually resolve the shot.
+     * <p>
+     * {@code Platform.runLater} is not optional here: {@link #game},
+     * the 3D scene, and every {@code CombatListener} may only be
+     * touched from the JavaFX Application Thread. Calling
+     * {@link #resolveNextMachineShot()} directly from this background
+     * thread would corrupt the scene graph (JavaFX explicitly forbids
+     * touching it off its own thread) instead of just running slowly.
+     * </p>
+     */
     private void scheduleNextMachineShot() {
-        PauseTransition pause = new PauseTransition(MACHINE_SHOT_DELAY);
-        pause.setOnFinished(event -> {
-            game.playMachineShot();
-            autoSave();
-
-            if (game.isOver()) {
-                deleteSaveOnGameOver();
-                notifyGameOver();
+        Thread delayThread = new Thread(() -> {
+            try {
+                Thread.sleep((long) MACHINE_SHOT_DELAY.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return;
             }
-            notifyTurnChanged();
-            focusCameraForCurrentTurn();
-            if (game.getCurrentTurn() == Turn.MACHINE) {
-                scheduleNextMachineShot(); // hit or sunk: the machine keeps firing
-            }
-        });
-        pause.play();
+            Platform.runLater(this::resolveNextMachineShot);
+        }, "machine-turn-delay");
+        delayThread.setDaemon(true); // never keeps the JVM alive on its own
+        delayThread.start();
+    }
+
+    /** Resolves exactly one machine shot -- always called back on the JavaFX Application Thread, never directly from {@link #scheduleNextMachineShot}'s background thread. */
+    private void resolveNextMachineShot() {
+        game.playMachineShot();
+
+        if (game.isOver()) {
+            deleteSaveOnGameOver();
+            notifyGameOver();
+            return;
+        }
+        autoSave();
+        notifyTurnChanged();
+        focusCameraForCurrentTurn();
+        if (game.getCurrentTurn() == Turn.MACHINE) {
+            scheduleNextMachineShot(); // hit or sunk: the machine keeps firing
+        }
     }
 
     /**
      * HU-5: writes the current game state to disk after every resolved
      * shot, so "Continuar" on the main menu always has the freshest
      * possible state to offer -- there's no separate "save" action to
-     * remember to use. A failure here is logged but never allowed to
-     * interrupt the match itself; losing the ability to save shouldn't
-     * mean losing the ability to keep playing.
+     * remember to use. Delegates to {@link SavedGameRepository#saveAsync},
+     * which does the actual write on its own background thread, so this
+     * call returns immediately and never stalls the game while a shot's
+     * animation is still playing.
      */
     private void autoSave() {
-        try {
-            SavedGameRepository.save(game);
-        } catch (IOException e) {
-            System.err.println("Could not auto-save the game: " + e.getMessage());
-        }
+        SavedGameRepository.saveAsync(game);
     }
 
-    /** Once a match is actually won or lost, there's nothing left to "continue" -- clear the save so the menu reflects that. */
+    /**
+     * Once a match is actually won or lost, there's nothing left to
+     * "continue" -- clear the save so the menu reflects that. Uses
+     * {@link SavedGameRepository#deleteSavedGameAsync()} (not the
+     * synchronous version) specifically so to delete is queued behind
+     * any autosave still pending from an earlier shot, instead of
+     * possibly racing ahead of it and getting silently undone.
+     */
     private void deleteSaveOnGameOver() {
-        try {
-            SavedGameRepository.deleteSavedGame();
-        } catch (IOException e) {
-            System.err.println("Could not delete the saved game: " + e.getMessage());
-        }
+        SavedGameRepository.deleteSavedGameAsync();
     }
 
     /**
@@ -218,22 +274,26 @@ public class CombatController {
         }
     }
 
+    /** Notifies every registered {@link CombatListener} of the current turn. */
     private void notifyTurnChanged() {
         for (CombatListener listener : listeners) {
             listener.onTurnChanged(game.getCurrentTurn());
         }
     }
 
+    /** Notifies every registered {@link CombatListener} that the match is over, naming the winner. */
     private void notifyGameOver() {
         for (CombatListener listener : listeners) {
             listener.onGameOver(game.getWinner());
         }
     }
 
+    /** @param listener a listener to notify of future turn changes and game-over */
     public void addListener(CombatListener listener) {
         listeners.add(listener);
     }
 
+    /** @param listener a previously added listener to stop notifying */
     public void removeListener(CombatListener listener) {
         listeners.remove(listener);
     }
@@ -254,6 +314,17 @@ public class CombatController {
         }
     }
 
+    /**
+     * Applies the correct 3D feedback for one resolved shot: a red X
+     * on the water for a miss, or -- via {@link Ship3D#markHit} -- the
+     * matching wreckage/hull change on the ship that got hit.
+     *
+     * @param boardGroup the 3D group the shot landed on (whichever board was targeted)
+     * @param shipViews  that board's ships, mapped to their 3D shapes
+     * @param position   the cell that was shot at
+     * @param result     the outcome of that shot
+     * @param ship       the ship that was hit, or {@code null} if the shot was a miss
+     */
     private void applyShotFeedback(Group boardGroup, Map<Ship, Ship3D> shipViews,
                                    Position position, ShotResult result, Ship ship) {
         if (result == ShotResult.WATER) {

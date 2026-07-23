@@ -12,6 +12,8 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Persists a {@link Game} to disk (HU-5), split across two files:
@@ -32,12 +34,32 @@ import java.nio.file.Path;
  * the working directory, so where the game happens to have been
  * launched from doesn't affect whether a previous save can be found.
  * </p>
+ * <p>
+ * {@link #saveAsync} runs the actual write on a dedicated background
+ * thread (see {@link #SAVE_EXECUTOR}), so autosaving after every shot
+ * never blocks the JavaFX Application Thread.
+ * </p>
  */
 public final class SavedGameRepository {
 
     private static final Path SAVE_DIRECTORY = Path.of(System.getProperty("user.home"), ".batalla-naval");
     private static final Path GAME_FILE = SAVE_DIRECTORY.resolve("saved-game.ser");
     private static final Path SUMMARY_FILE = SAVE_DIRECTORY.resolve("saved-game-summary.txt");
+
+    /**
+     * A single dedicated background thread for every save. Writing to
+     * disk is blocking I/O; running it on the JavaFX Application Thread
+     * (the same thread driving the camera and every animation) would
+     * freeze the interface for however long the write takes. A single
+     * thread, not a pool, is deliberate: save requests always run one
+     * at a time, in the order they were submitted, so two autosaves can
+     * never race to write the same file at once.
+     */
+    private static final ExecutorService SAVE_EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "game-autosave");
+        thread.setDaemon(true); // never keeps the JVM alive on its own
+        return thread;
+    });
 
     private SavedGameRepository() {
         // Utility class: not meant to be instantiated.
@@ -56,6 +78,29 @@ public final class SavedGameRepository {
         saveSummaryText(game);
     }
 
+    /**
+     * Same as {@link #save(Game)}, but performed on the dedicated
+     * background thread ({@link #SAVE_EXECUTOR}) instead of the
+     * caller's own -- meant to be called from the JavaFX Application
+     * Thread (see {@code CombatController#autoSave}) without blocking
+     * it on disk I/O. Any {@link IOException} is caught and logged on
+     * the background thread; by the time it could occur, this method
+     * has already returned, so there's no way to propagate it back to
+     * the caller.
+     *
+     * @param game the game to save
+     */
+    public static void saveAsync(Game game) {
+        SAVE_EXECUTOR.submit(() -> {
+            try {
+                save(game);
+            } catch (IOException e) {
+                System.err.println("Could not auto-save the game: " + e.getMessage());
+            }
+        });
+    }
+
+    /** Writes the whole {@link Game} object to {@link #GAME_FILE} via plain Java serialization, overwriting any previous save. */
     private static void saveSerializedGame(Game game) throws IOException {
         try (ObjectOutputStream out = new ObjectOutputStream(
                 new BufferedOutputStream(new FileOutputStream(GAME_FILE.toFile())))) {
@@ -63,6 +108,7 @@ public final class SavedGameRepository {
         }
     }
 
+    /** Writes the plain-text nickname/sunk-ships/turn summary to {@link #SUMMARY_FILE}, overwriting any previous one. */
     private static void saveSummaryText(Game game) throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileOutputStream(SUMMARY_FILE.toFile()))) {
             writer.println("Nickname: " + game.getHuman().getNickname());
@@ -100,5 +146,31 @@ public final class SavedGameRepository {
     public static void deleteSavedGame() throws IOException {
         Files.deleteIfExists(GAME_FILE);
         Files.deleteIfExists(SUMMARY_FILE);
+    }
+
+    /**
+     * Same as {@link #deleteSavedGame()}, but submitted to the same
+     * {@link #SAVE_EXECUTOR} queue as {@link #saveAsync}, instead of
+     * running immediately on the caller's own thread.
+     * <p>
+     * This matters specifically because the queue is FIFO and
+     * single-threaded: if an earlier {@link #saveAsync} call is still
+     * waiting to run when a match ends, deleting synchronously (on the
+     * calling thread) could finish BEFORE that queued save actually
+     * writes the file -- silently recreating a "saved game" for a
+     * match that already ended. Submitting to delete to the same
+     * queue instead guarantees it always runs after every save
+     * requested before it, no matter how the two threads happen to be
+     * scheduled.
+     * </p>
+     */
+    public static void deleteSavedGameAsync() {
+        SAVE_EXECUTOR.submit(() -> {
+            try {
+                deleteSavedGame();
+            } catch (IOException e) {
+                System.err.println("Could not delete the saved game: " + e.getMessage());
+            }
+        });
     }
 }

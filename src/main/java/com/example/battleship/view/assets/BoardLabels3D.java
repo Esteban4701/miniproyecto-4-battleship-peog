@@ -191,12 +191,20 @@ public final class BoardLabels3D {
      * starting from the un-flipped mapping here; adjust this array the
      * same way the player one was tuned if it still reads wrong.
      */
+    /**
+     * Flat quad for the machine's board labels: the U (horizontal) axis
+     * flipped relative to the un-tuned starting mapping -- that
+     * starting version read mirrored left-right. Still V-unflipped; if
+     * this comes out upside-down instead of mirrored, flip the second
+     * number of each pair too (the same "both flipped" pattern already
+     * confirmed correct for the player's board).
+     */
     private static MeshView buildFlatQuadForMachine(double width, double depth) {
         return buildFlatQuad(width, depth, new float[]{
-                0, 0,
                 1, 0,
-                1, 1,
+                0, 0,
                 0, 1,
+                1, 1,
         });
     }
 
