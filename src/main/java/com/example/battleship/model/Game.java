@@ -1,7 +1,12 @@
 package com.example.battleship.model;
 
 import com.example.battleship.model.board.Position;
-import com.example.battleship.model.player.*;
+import com.example.battleship.model.player.HumanPlayer;
+import com.example.battleship.model.player.MachinePlayer;
+import com.example.battleship.model.player.Player;
+import com.example.battleship.model.player.ShootingStrategy;
+import com.example.battleship.model.player.ShotResult;
+import com.example.battleship.model.player.Turn;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -67,12 +72,24 @@ public class Game implements Serializable {
         return new ShotOutcome(target, result);
     }
 
+    /**
+     * Guards a shot-firing method against being called out of turn.
+     *
+     * @param expected the turn the caller requires it to currently be
+     * @throws IllegalStateException if {@link #currentTurn} isn't {@code expected}
+     */
     private void requireTurn(Turn expected) {
         if (currentTurn != expected) {
             throw new IllegalStateException("It is not " + expected + "'s turn (current turn: " + currentTurn + ")");
         }
     }
 
+    /**
+     * Passes {@link #currentTurn} to the other side, unless {@code result}
+     * grants the same shooter another shot (a hit or a sunk ship, per HU-2).
+     *
+     * @param result the outcome of the shot that was just resolved
+     */
     private void advanceTurnIfNeeded(ShotResult result) {
         if (!result.grantsAnotherTurn()) {
             currentTurn = currentTurn == Turn.HUMAN ? Turn.MACHINE : Turn.HUMAN;
@@ -95,14 +112,17 @@ public class Game implements Serializable {
         return null;
     }
 
+    /** @return the human player */
     public HumanPlayer getHuman() {
         return human;
     }
 
+    /** @return the machine player */
     public MachinePlayer getMachine() {
         return machine;
     }
 
+    /** @return whose turn it currently is to shoot */
     public Turn getCurrentTurn() {
         return currentTurn;
     }

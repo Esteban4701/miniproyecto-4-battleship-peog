@@ -2,6 +2,7 @@ package com.example.battleship.view.assets;
 
 import com.example.battleship.view.Config3D;
 
+import com.example.battleship.view.ships.Ship3D;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -22,7 +23,13 @@ public final class ShotMark3D {
         // Utility class: not meant to be instantiated.
     }
 
-    /** Miss shot on the water: a red "X" made of two crossed cylinders. */
+    /**
+     * Miss shot on the water: a red "X" made of two crossed cylinders.
+     *
+     * @param row    board row of the missed cell
+     * @param column board column of the missed cell
+     * @return a group containing the mark, already positioned over that cell
+     */
     public static Group waterMiss(int row, int column) {
         Group group = new Group();
         PhongMaterial material = new PhongMaterial(Color.rgb(200, 25, 25));
@@ -45,7 +52,13 @@ public final class ShotMark3D {
         return group;
     }
 
-    /** Extra hit marker (small flame) shown above a cell where a ship was hit. */
+    /**
+     * Extra hit marker (small flame) shown above a cell where a ship was hit.
+     *
+     * @param row    board row of the hit cell
+     * @param column board column of the hit cell
+     * @return a group containing the mark, already positioned over that cell
+     */
     public static Group hit(int row, int column) {
         Group group = new Group();
         Sphere flame = new Sphere(5);

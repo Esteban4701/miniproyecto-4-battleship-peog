@@ -39,6 +39,7 @@ public class Frigate3D extends Ship3D {
         super(1, row, column, orientation);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Group buildHull() {
         Group group = new Group();

@@ -1,0 +1,13 @@
+module:com.example.battleship
+com.example.battleship
+com.example.battleship.controller
+com.example.battleship.controller.event
+com.example.battleship.controller.persistence
+com.example.battleship.model
+com.example.battleship.model.board
+com.example.battleship.model.exception
+com.example.battleship.model.player
+com.example.battleship.model.ship
+com.example.battleship.view
+com.example.battleship.view.assets
+com.example.battleship.view.ships

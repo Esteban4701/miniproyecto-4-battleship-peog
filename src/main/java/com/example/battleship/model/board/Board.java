@@ -1,6 +1,6 @@
 package com.example.battleship.model.board;
 
-import com.example.battleship.model.ShotResult;
+import com.example.battleship.model.player.ShotResult;
 import com.example.battleship.model.exception.CellAlreadyShotException;
 import com.example.battleship.model.exception.InvalidShipPlacementException;
 import com.example.battleship.model.exception.OutOfBoardException;

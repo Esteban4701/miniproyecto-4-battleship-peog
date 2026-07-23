@@ -51,7 +51,9 @@ public final class BoardLabels3D {
 
     /** Which board these labels are for -- picks which quad texture mapping to use. */
     public enum Board {
+        /** The player's own board. */
         PLAYER,
+        /** The machine's board. */
         MACHINE
     }
 
@@ -83,6 +85,15 @@ public final class BoardLabels3D {
         }
     }
 
+    /**
+     * Builds one full set of column-letter and row-number labels for a
+     * board, positioned in that board's own local 0..360 coordinates
+     * (relative to whatever group the caller adds the result to).
+     *
+     * @param layout which edges/reading order to use (see {@link Layout})
+     * @param board  which board these labels are for (picks the texture mapping)
+     * @return a fresh group containing every letter and number label
+     */
     public static Group build(Layout layout, Board board) {
         Group group = new Group();
 
@@ -118,6 +129,7 @@ public final class BoardLabels3D {
         return group;
     }
 
+    /** Builds one label's flat textured quad, sized to keep the baked text image's own aspect ratio. */
     private static MeshView createLabel(String text, Board board) {
         Image texture = renderTextTexture(text);
         double aspect = texture.getWidth() / texture.getHeight();

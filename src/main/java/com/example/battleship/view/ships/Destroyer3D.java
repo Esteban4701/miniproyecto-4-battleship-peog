@@ -39,10 +39,16 @@ public class Destroyer3D extends Ship3D {
     /** Number of "printed" cross-section slices used to taper the hull along X. */
     private static final int HULL_SLICES = 6;
 
+    /**
+     * @param row         board row of this ship's anchor cell (its bow)
+     * @param column      board column of this ship's anchor cell
+     * @param orientation whether this ship extends along rows or columns from its anchor cell
+     */
     public Destroyer3D(int row, int column, Orientation orientation) {
         super(2, row, column, orientation);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Group buildHull() {
         // NOTE: these are local variables, not instance fields. Ship3D's

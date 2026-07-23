@@ -3,6 +3,8 @@ package com.example.battleship.controller;
 import com.example.battleship.Main;
 import com.example.battleship.controller.event.CombatAdapter;
 import com.example.battleship.controller.event.ShipPlacementAdapter;
+import com.example.battleship.controller.persistence.SavedGameRepository;
+import com.example.battleship.model.Game;
 import com.example.battleship.model.ship.Orientation;
 import com.example.battleship.model.player.Player;
 import com.example.battleship.model.ship.Ship;
@@ -79,9 +81,15 @@ public class GameScreenController {
         // clicks meant for the board cells underneath it.
         placementHudPane.setMouseTransparent(true);
 
-        // HU-5 (save/load) doesn't exist yet -- this stays disabled until it does.
-        continueButton.setDisable(true);
-        continueButton.setTooltip(new Tooltip("Proximamente: guardar y continuar partida"));
+        // HU-5: "Continuar" is only ever enabled when there's actually
+        // something saved on disk to continue.
+        refreshContinueButtonState();
+    }
+
+    private void refreshContinueButtonState() {
+        boolean hasSavedGame = SavedGameRepository.hasSavedGame();
+        continueButton.setDisable(!hasSavedGame);
+        continueButton.setTooltip(new Tooltip(hasSavedGame ? "Continuar la partida guardada" : "No hay partida guardada"));
     }
 
     @FXML
@@ -94,9 +102,30 @@ public class GameScreenController {
         startPlacementPhase(nickname.trim());
     }
 
+    /** HU-5: loads the saved game from disk and jumps straight into combat with it, skipping placement entirely. */
     @FXML
     private void onContinueClicked() {
-        // Left empty on purpose: wired up once HU-5 (save/load) exists.
+        Game savedGame;
+        try {
+            savedGame = SavedGameRepository.load();
+        } catch (IOException | ClassNotFoundException e) {
+            startMenuHintLabel.setText("No se pudo cargar la partida guardada");
+            refreshContinueButtonState();
+            return;
+        }
+
+        mainGameController = new MainGameController(savedGame, battlefield, battlefield);
+        mainGameController.resume();
+        mainGameController.getCombatController().addListener(new CombatAdapter() {
+            @Override
+            public void onGameOver(Player winner) {
+                showGameOver(winner);
+            }
+        });
+
+        phase = GamePhase.COMBAT;
+        setPaneVisible(startMenuPane, false);
+        battlefield.getCameraRig().attachDragControls(battlefield);
     }
 
     @FXML

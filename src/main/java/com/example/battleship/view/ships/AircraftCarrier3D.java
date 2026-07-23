@@ -38,10 +38,16 @@ public class AircraftCarrier3D extends Ship3D {
     /** Fraction of the length (from the bow) over which the beam ramps up to full width. */
     private static final double PLATEAU_FRACTION = 0.28;
 
+    /**
+     * @param row         board row of this ship's anchor cell (its bow)
+     * @param column      board column of this ship's anchor cell
+     * @param orientation whether this ship extends along rows or columns from its anchor cell
+     */
     public AircraftCarrier3D(int row, int column, Orientation orientation) {
         super(4, row, column, orientation);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Group buildHull() {
         // Local variables, not instance fields: Ship3D's constructor calls
@@ -77,6 +83,7 @@ public class AircraftCarrier3D extends Ship3D {
         return u * u;
     }
 
+    /** @return the beam (width) of hull slice number {@code index} out of {@value #HULL_SLICES}, per {@link #beamFactor} */
     private double beamAtIndex(int index, double maxBeam, double minBeam) {
         double t = (double) index / (HULL_SLICES - 1);
         return minBeam + (maxBeam - minBeam) * beamFactor(t);
@@ -90,6 +97,7 @@ public class AircraftCarrier3D extends Ship3D {
         return beamAtIndex(index, maxBeam, minBeam);
     }
 
+    /** Builds one full hull layer as {@value #HULL_SLICES} adjacent {@code Box} slices, each sized by {@link #beamAtIndex}. */
     private void buildTaperedLayer(Group group, double centerY, double layerHeight,
                                    double maxBeam, double minBeam, Color color,
                                    double hullLength, double bowTipX) {
@@ -106,6 +114,7 @@ public class AircraftCarrier3D extends Ship3D {
         }
     }
 
+    /** @return the Y coordinate of the flight deck's top surface, used to sit every deck detail flush on it */
     private static double deckTopY() {
         return -19 - 2; // flight deck layer: centerY -19, half-height 2
     }

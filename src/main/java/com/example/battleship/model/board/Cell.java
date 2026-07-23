@@ -27,14 +27,23 @@ public class Cell implements Serializable {
         this.state = CellState.EMPTY;
     }
 
+    /** @return this cell's fixed position on the board */
     public Position getPosition() {
         return position;
     }
 
+    /** @return this cell's current state (empty, occupied by a ship, missed, hit, or sunk) */
     public CellState getState() {
         return state;
     }
 
+    /**
+     * Updates this cell's state. Package-private: only {@link Board}
+     * mutates a cell, as part of placing a ship or resolving a shot --
+     * every other caller only ever reads {@link #getState()}.
+     *
+     * @param state the new state for this cell
+     */
     void setState(CellState state) {
         this.state = state;
     }
@@ -44,6 +53,13 @@ public class Cell implements Serializable {
         return occupyingShip;
     }
 
+    /**
+     * Records which ship occupies this cell. Package-private: only
+     * {@link Board} sets this, while placing a ship -- every other
+     * caller only ever reads {@link #getOccupyingShip()}.
+     *
+     * @param ship the ship now occupying this cell
+     */
     void setOccupyingShip(Ship ship) {
         this.occupyingShip = ship;
     }

@@ -62,6 +62,7 @@ public final class FleetPlacer {
         }
     }
 
+    /** @return a uniformly random position anywhere on the board, valid or not as an origin for a given ship */
     private static Position randomOrigin(Random random) {
         return new Position(random.nextInt(Board.SIZE), random.nextInt(Board.SIZE));
     }

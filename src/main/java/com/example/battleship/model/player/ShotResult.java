@@ -1,4 +1,4 @@
-package com.example.battleship.model;
+package com.example.battleship.model.player;
 
 import com.example.battleship.model.board.Board;
 

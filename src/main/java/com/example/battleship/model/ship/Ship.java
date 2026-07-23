@@ -11,8 +11,7 @@ import java.util.List;
  * A ship placed on a {@link Board}: a type, a starting {@link Position},
  * an {@link Orientation}, and per-segment hit tracking.
  * <p>
- * A ship is immutable in terms of where it sits (per HU-1, "Una vez
- * colocados, los barcos no pueden ser movidos ni modificados") -- the
+ * A ship is immutable in terms of where it sits the
  * only thing that ever changes after construction is which of its
  * segments have been hit.
  * </p>
@@ -69,6 +68,7 @@ public class Ship implements Serializable {
         }
     }
 
+    /** @return {@code true} if {@code offset} falls within this ship's actual segment count (0 up to, but not including, its size) */
     private boolean isValidSegment(int offset) {
         return offset >= 0 && offset < type.getSizeInCells();
     }
@@ -104,14 +104,17 @@ public class Ship implements Serializable {
         return true;
     }
 
+    /** @return this ship's type (fixes its size and how many of it a fleet has) */
     public ShipType getType() {
         return type;
     }
 
+    /** @return the position of this ship's first segment (index 0) */
     public Position getOrigin() {
         return origin;
     }
 
+    /** @return the direction this ship's remaining segments extend in, from its origin */
     public Orientation getOrientation() {
         return orientation;
     }

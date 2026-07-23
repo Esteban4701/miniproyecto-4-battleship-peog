@@ -20,6 +20,7 @@ public class HoverMarker3D extends MeshView {
     private static final int SEGMENTS = 24;
     private static final double HOVER_Y = -3;
 
+    /** Builds the ring mesh and starts it hidden, mouse-transparent, and floating just above the water plane. */
     public HoverMarker3D() {
         TriangleMesh mesh = buildRingMesh(INNER_RADIUS, OUTER_RADIUS, SEGMENTS);
         setMesh(mesh);
@@ -34,16 +35,24 @@ public class HoverMarker3D extends MeshView {
         setVisible(false);
     }
 
+    /**
+     * Moves the ring to sit over the given cell and makes it visible.
+     *
+     * @param row    board row to move to
+     * @param column board column to move to
+     */
     public void moveToCell(int row, int column) {
         setTranslateX(column * Config3D.CELL_SIZE);
         setTranslateZ(row * Config3D.CELL_SIZE);
         setVisible(true);
     }
 
+    /** Hides the ring -- used when the mouse moves off any valid cell. */
     public void hide() {
         setVisible(false);
     }
 
+    /** Builds a flat ring (an inner and outer circle of points, triangulated between them) lying in the X/Z plane. */
     private static TriangleMesh buildRingMesh(double innerRadius, double outerRadius, int segments) {
         TriangleMesh mesh = new TriangleMesh();
 
@@ -86,6 +95,7 @@ public class HoverMarker3D extends MeshView {
         return mesh;
     }
 
+    /** Writes one triangle's three (point, texCoord) index pairs into {@code faces} starting at {@code startIndex}, and returns the next free index. */
     private static int writeTriangle(int[] faces, int startIndex, int pointA, int pointB, int pointC) {
         int index = startIndex;
         faces[index] = pointA;

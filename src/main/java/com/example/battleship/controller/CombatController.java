@@ -2,13 +2,15 @@ package com.example.battleship.controller;
 
 import com.example.battleship.controller.event.BoardListenerAdapter;
 import com.example.battleship.controller.event.CombatListener;
+import com.example.battleship.controller.persistence.SavedGameRepository;
 import com.example.battleship.model.Game;
 import com.example.battleship.model.board.Position;
 import com.example.battleship.model.ship.Ship;
-import com.example.battleship.model.ShotResult;
+import com.example.battleship.model.player.ShotResult;
 import com.example.battleship.model.player.Turn;
 import com.example.battleship.model.exception.CellAlreadyShotException;
 import com.example.battleship.view.BattlefieldView3D;
+import com.example.battleship.view.assets.HoverMarker3D;
 import com.example.battleship.view.assets.ShotMark3D;
 import com.example.battleship.view.assets.Water3D;
 import com.example.battleship.view.ships.Ship3D;
@@ -20,6 +22,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.util.Duration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,11 @@ import java.util.Map;
  * (fired from {@link #scheduleNextMachineShot}) drive the same visual
  * feedback path as the player's shots, with no duplicated code.
  * </p>
+ * <p>
+ * Also drives HU-5's autosave: every resolved shot writes the game to
+ * disk via {@link SavedGameRepository} (see {@link #autoSave}), and the
+ * save is deleted once the match actually ends.
+ * </p>
  */
 public class CombatController {
 
@@ -55,6 +63,10 @@ public class CombatController {
     private final Map<Ship, Ship3D> playerShipViews;
     private final Map<Ship, Ship3D> machineShipViews;
     private final List<CombatListener> listeners = new ArrayList<>();
+    private final HoverMarker3D targetMarker = new HoverMarker3D();
+
+    /** The cell picked on the first click, waiting for a second click on the same cell to confirm. */
+    private Position selectedPosition;
 
     /**
      * @param game              the game being played
@@ -73,6 +85,8 @@ public class CombatController {
         game.getMachine().getOwnBoard().addListener(new MachineBoardListener());
         // The machine fires at the human's board.
         game.getHuman().getOwnBoard().addListener(new HumanBoardListener());
+
+        view.getMachineBoardGroup().getChildren().add(targetMarker);
     }
 
     /**
@@ -86,6 +100,14 @@ public class CombatController {
         pickSurface.setOnMouseClicked(this::onCellClicked);
     }
 
+    /**
+     * First click on a cell selects it (shows {@link #targetMarker} there)
+     * without firing; a second click on that SAME cell confirms and
+     * fires. Clicking a different cell just moves the selection there
+     * instead of firing -- this is what stops an accidental shot from a
+     * click that was really meant to start dragging the camera, since a
+     * single stray click during a drag only ever selects, never fires.
+     */
     private void onCellClicked(MouseEvent event) {
         if (game.getCurrentTurn() != Turn.HUMAN) {
             return;
@@ -96,16 +118,32 @@ public class CombatController {
             return;
         }
 
+        Position clicked = new Position(water.getRow(), water.getColumn());
+        if (!game.getMachine().getOwnBoard().canBeShotAt(clicked)) {
+            return; // Already resolved cell: nothing to select or confirm.
+        }
+
+        if (!clicked.equals(selectedPosition)) {
+            selectedPosition = clicked;
+            targetMarker.moveToCell(clicked.row(), clicked.column());
+            return;
+        }
+
+        selectedPosition = null;
+        targetMarker.hide();
+
         try {
-            game.fireAtMachine(new Position(water.getRow(), water.getColumn()));
+            game.fireAtMachine(clicked);
         } catch (CellAlreadyShotException e) {
-            return; // Already resolved cell: ignore the click, nothing changes.
+            return; // Defensive: shouldn't happen given the canBeShotAt check above.
         }
         afterShotResolved();
     }
 
     private void afterShotResolved() {
+        autoSave();
         if (game.isOver()) {
+            deleteSaveOnGameOver();
             notifyGameOver();
             return;
         }
@@ -120,8 +158,10 @@ public class CombatController {
         PauseTransition pause = new PauseTransition(MACHINE_SHOT_DELAY);
         pause.setOnFinished(event -> {
             game.playMachineShot();
+            autoSave();
 
             if (game.isOver()) {
+                deleteSaveOnGameOver();
                 notifyGameOver();
                 return;
             }
@@ -132,6 +172,31 @@ public class CombatController {
             }
         });
         pause.play();
+    }
+
+    /**
+     * HU-5: writes the current game state to disk after every resolved
+     * shot, so "Continuar" on the main menu always has the freshest
+     * possible state to offer -- there's no separate "save" action to
+     * remember to use. A failure here is logged but never allowed to
+     * interrupt the match itself; losing the ability to save shouldn't
+     * mean losing the ability to keep playing.
+     */
+    private void autoSave() {
+        try {
+            SavedGameRepository.save(game);
+        } catch (IOException e) {
+            System.err.println("Could not auto-save the game: " + e.getMessage());
+        }
+    }
+
+    /** Once a match is actually won or lost, there's nothing left to "continue" -- clear the save so the menu reflects that. */
+    private void deleteSaveOnGameOver() {
+        try {
+            SavedGameRepository.deleteSavedGame();
+        } catch (IOException e) {
+            System.err.println("Could not delete the saved game: " + e.getMessage());
+        }
     }
 
     /**

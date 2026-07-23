@@ -92,6 +92,7 @@ public abstract class Ship3D extends Group {
         return (sizeInCells - 1) * Config3D.CELL_SIZE / 2.0;
     }
 
+    /** Positions and (for a vertical ship) rotates this whole node to sit at its anchor cell, facing the right way. */
     private void placeOnBoard() {
         setTranslateX(anchorColumn * Config3D.CELL_SIZE);
         setTranslateZ(anchorRow * Config3D.CELL_SIZE);
@@ -216,10 +217,15 @@ public abstract class Ship3D extends Group {
         }
     }
 
+    /** @return {@code true} once every segment is at least HIT (hit or already sunk) -- the trigger for {@link #markSunk()} */
     private boolean isFullyHit() {
         return states.stream().allMatch(s -> s == SegmentState.HIT || s == SegmentState.SUNK);
     }
 
+    /**
+     * @param index a segment index to check
+     * @throws IndexOutOfBoundsException if {@code index} isn't a valid segment of this ship
+     */
     private void validateIndex(int index) {
         if (index < 0 || index >= sizeInCells) {
             throw new IndexOutOfBoundsException(
@@ -227,26 +233,36 @@ public abstract class Ship3D extends Group {
         }
     }
 
+    /** @return {@code true} once every segment of this ship has been sunk */
     public boolean isSunk() {
         return states.stream().allMatch(s -> s == SegmentState.SUNK);
     }
 
+    /** @return how many cells this ship occupies */
     public int getSizeInCells() {
         return sizeInCells;
     }
 
+    /** @return the board row of this ship's anchor cell (its bow) */
     public int getAnchorRow() {
         return anchorRow;
     }
 
+    /** @return the board column of this ship's anchor cell (its bow) */
     public int getAnchorColumn() {
         return anchorColumn;
     }
 
+    /** @return the direction this ship's remaining segments extend in, from its anchor cell */
     public Orientation getOrientation() {
         return orientation;
     }
 
+    /**
+     * @param segmentIndex a segment index (0-based)
+     * @return that segment's current visual state (intact, hit, or sunk)
+     * @throws IndexOutOfBoundsException if {@code segmentIndex} isn't a valid segment of this ship
+     */
     public SegmentState getState(int segmentIndex) {
         validateIndex(segmentIndex);
         return states.get(segmentIndex);

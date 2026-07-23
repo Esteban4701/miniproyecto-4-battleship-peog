@@ -38,10 +38,16 @@ public class Submarine3D extends Ship3D {
     private static final double MAX_RADIUS = 13;
     private static final double MIN_RADIUS = 2;
 
+    /**
+     * @param row         board row of this ship's anchor cell (its bow)
+     * @param column      board column of this ship's anchor cell
+     * @param orientation whether this ship extends along rows or columns from its anchor cell
+     */
     public Submarine3D(int row, int column, Orientation orientation) {
         super(3, row, column, orientation);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Group buildHull() {
         // Local variables, not instance fields: Ship3D's constructor calls

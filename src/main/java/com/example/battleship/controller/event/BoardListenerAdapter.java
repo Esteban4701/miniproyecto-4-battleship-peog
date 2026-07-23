@@ -3,7 +3,7 @@ package com.example.battleship.controller.event;
 import com.example.battleship.model.board.BoardListener;
 import com.example.battleship.model.board.Position;
 import com.example.battleship.model.ship.Ship;
-import com.example.battleship.model.ShotResult;
+import com.example.battleship.model.player.ShotResult;
 
 /**
  * No-op default implementation of the model's
