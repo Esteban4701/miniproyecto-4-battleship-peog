@@ -22,4 +22,6 @@ module com.example.battleship {
 
     exports com.example.battleship.model;
     opens com.example.battleship.model to javafx.fxml;
+    exports com.example.battleship.controller.persistence;
+    opens com.example.battleship.controller.persistence to javafx.fxml;
 }
