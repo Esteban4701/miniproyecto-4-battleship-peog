@@ -57,6 +57,7 @@ public final class WreckageDebris3D {
         return group;
     }
 
+    /** Builds one broken hull fragment from its {@link FragmentSpec}: sized, colored, positioned, and tipped over on two axes. */
     private static Box buildFragment(FragmentSpec spec) {
         Box fragment = new Box(spec.size(), spec.size() * 0.35, spec.size() * 0.8);
         PhongMaterial material = new PhongMaterial(spec.dark() ? FRAGMENT_DARK_COLOR : FRAGMENT_COLOR);

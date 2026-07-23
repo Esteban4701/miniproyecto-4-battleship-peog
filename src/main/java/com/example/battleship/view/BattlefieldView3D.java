@@ -72,7 +72,9 @@ public class BattlefieldView3D extends SubScene {
 
     /** Whose board the camera should be looking at. */
     public enum Turn {
+        /** The camera should be hovering over the player's own board. */
         PLAYER,
+        /** The camera should be hovering over the machine's board. */
         MACHINE
     }
 
@@ -87,6 +89,14 @@ public class BattlefieldView3D extends SubScene {
 
     private Turn currentTurn = Turn.PLAYER;
 
+    /**
+     * Builds both boards, the sea, the sky, the lights, and the camera
+     * rig (starting parked over the player's own board), all inside one
+     * {@code SubScene}.
+     *
+     * @param width  initial width of the embedded {@code SubScene}
+     * @param height initial height of the embedded {@code SubScene}
+     */
     public BattlefieldView3D(double width, double height) {
         super(new Group(), width, height, true, SceneAntialiasing.BALANCED);
         Group root3D = (Group) getRoot();
@@ -346,10 +356,12 @@ public class BattlefieldView3D extends SubScene {
         }
     }
 
+    /** @return whichever board the camera is currently parked over */
     public Turn getCurrentTurn() {
         return currentTurn;
     }
 
+    /** @return the camera rig itself, so a controller can wire up drag-to-orbit input once gameplay actually starts */
     public OrbitCameraRig3D getCameraRig() {
         return cameraRig;
     }

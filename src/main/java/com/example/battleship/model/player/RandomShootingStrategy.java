@@ -33,6 +33,11 @@ public class RandomShootingStrategy implements ShootingStrategy {
         this.random = random;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException if every cell on {@code opponentBoard} has already been shot at
+     */
     @Override
     public Position chooseTarget(Board opponentBoard) {
         List<Position> candidates = new ArrayList<>();

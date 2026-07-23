@@ -6,7 +6,7 @@ import com.example.battleship.controller.persistence.SavedGameRepository;
 import com.example.battleship.model.Game;
 import com.example.battleship.model.board.Position;
 import com.example.battleship.model.ship.Ship;
-import com.example.battleship.model.ShotResult;
+import com.example.battleship.model.player.ShotResult;
 import com.example.battleship.model.player.Turn;
 import com.example.battleship.model.exception.CellAlreadyShotException;
 import com.example.battleship.view.BattlefieldView3D;

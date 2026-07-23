@@ -28,11 +28,20 @@ import javafx.scene.transform.Rotate;
  */
 public class BoardView3D extends SubScene {
 
+    /** Number of rows on the board. */
     public static final int ROWS = 10;
+    /** Number of columns on the board. */
     public static final int COLUMNS = 10;
 
     private final Group root3D;
 
+    /**
+     * Builds a single 10x10 board, its own fixed camera, lighting, and
+     * water grid, ready to have ships and shot marks added to it.
+     *
+     * @param width  initial width of the embedded {@code SubScene}
+     * @param height initial height of the embedded {@code SubScene}
+     */
     public BoardView3D(double width, double height) {
         super(new Group(), width, height, true, SceneAntialiasing.BALANCED);
         this.root3D = (Group) getRoot();
@@ -43,6 +52,7 @@ public class BoardView3D extends SubScene {
         setFill(Color.rgb(10, 15, 25));
     }
 
+    /** Fills {@link #root3D} with one {@link Water3D} tile per cell of the {@value #ROWS}x{@value #COLUMNS} grid. */
     private void buildWaterGrid() {
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
@@ -51,6 +61,7 @@ public class BoardView3D extends SubScene {
         }
     }
 
+    /** Builds and installs a fixed, tilted-down camera framing the whole board -- see the rig comments below for why it's built this way. */
     private void setupCamera() {
         PerspectiveCamera camera = new PerspectiveCamera(true);
         camera.setNearClip(0.1);
@@ -81,6 +92,7 @@ public class BoardView3D extends SubScene {
         setCamera(camera);
     }
 
+    /** Adds a soft ambient fill light plus one point light, so the board's shapes read with visible shading instead of flat silhouettes. */
     private void setupLights() {
         AmbientLight ambientLight = new AmbientLight(Color.rgb(150, 150, 160));
         PointLight pointLight = new PointLight(Color.WHITE);

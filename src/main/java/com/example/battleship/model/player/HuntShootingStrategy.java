@@ -65,6 +65,7 @@ public class HuntShootingStrategy implements ShootingStrategy {
         this.fallback = new RandomShootingStrategy(random);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Position chooseTarget(Board opponentBoard) {
         List<Position> huntCandidates = findHuntCandidates(opponentBoard);
@@ -91,6 +92,7 @@ public class HuntShootingStrategy implements ShootingStrategy {
         return candidates;
     }
 
+    /** @return {@code true} if {@code position} has been hit but hasn't sunk its ship yet */
     private boolean isHit(Board board, Position position) {
         return board.getCell(position).getState() == CellState.HIT;
     }
@@ -152,6 +154,7 @@ public class HuntShootingStrategy implements ShootingStrategy {
         return candidates;
     }
 
+    /** @return every orthogonal neighbor of {@code hit} that is still within the board and hasn't been shot at yet */
     private List<Position> unshotOrthogonalNeighbors(Board board, Position hit) {
         List<Position> candidates = new ArrayList<>();
         for (Position neighbor : orthogonalNeighborsInBounds(hit)) {
@@ -183,6 +186,7 @@ public class HuntShootingStrategy implements ShootingStrategy {
         return candidates;
     }
 
+    /** @return the (up to four) orthogonal neighbors of {@code center} that fall within the board's 0-9 range */
     private List<Position> orthogonalNeighborsInBounds(Position center) {
         List<Position> neighbors = new ArrayList<>(4);
         for (int[] offset : ORTHOGONAL_OFFSETS) {
@@ -195,6 +199,7 @@ public class HuntShootingStrategy implements ShootingStrategy {
         return neighbors;
     }
 
+    /** Adds {@code (row, column)} to {@code candidates} if it's within the board and hasn't been shot at yet; otherwise does nothing. */
     private void addIfInBoundsAndShootable(Board board, int row, int column, List<Position> candidates) {
         if (row < 0 || row >= Board.SIZE || column < 0 || column >= Board.SIZE) {
             return;

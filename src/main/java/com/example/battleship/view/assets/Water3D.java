@@ -19,6 +19,10 @@ public class Water3D extends Box {
     private final int row;
     private final int column;
 
+    /**
+     * @param row    board row this tile represents
+     * @param column board column this tile represents
+     */
     public Water3D(int row, int column) {
         super(Config3D.CELL_SIZE - 1, Config3D.WATER_HEIGHT, Config3D.CELL_SIZE - 1);
         this.row = row;
@@ -28,10 +32,12 @@ public class Water3D extends Box {
         setTranslateZ(row * Config3D.CELL_SIZE);
     }
 
+    /** @return this tile's board row */
     public int getRow() {
         return row;
     }
 
+    /** @return this tile's board column */
     public int getColumn() {
         return column;
     }

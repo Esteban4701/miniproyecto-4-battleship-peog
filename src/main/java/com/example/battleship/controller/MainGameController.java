@@ -39,7 +39,7 @@ import java.util.Random;
  */
 public class MainGameController {
 
-    private Game game;
+    private final Game game;
     private final BattlefieldView3D view;
     private final Node pickSurface;
 

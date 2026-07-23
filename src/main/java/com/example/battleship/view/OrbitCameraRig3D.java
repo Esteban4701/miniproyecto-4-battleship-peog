@@ -67,8 +67,6 @@ public class OrbitCameraRig3D {
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
 
     private final Group targetPivot = new Group();
-    private final Group azimuthPivot = new Group();
-    private final Group elevationPivot = new Group();
 
     /** Pivot is (0,0,0) by default -- exactly what makes this an orbit, not a look-around. */
     private final Rotate azimuthRotate = new Rotate(0, Rotate.Y_AXIS);
@@ -94,9 +92,11 @@ public class OrbitCameraRig3D {
         camera.setFieldOfView(45);
         camera.setTranslateZ(-radius);
 
+        Group elevationPivot = new Group();
         elevationPivot.getTransforms().add(elevationRotate);
         elevationPivot.getChildren().add(camera);
 
+        Group azimuthPivot = new Group();
         azimuthPivot.getTransforms().add(azimuthRotate);
         azimuthPivot.getChildren().add(elevationPivot);
 
@@ -111,6 +111,7 @@ public class OrbitCameraRig3D {
         return targetPivot;
     }
 
+    /** @return the camera itself, for handing to {@code SubScene}'s constructor */
     public PerspectiveCamera getCamera() {
         return camera;
     }
@@ -142,6 +143,7 @@ public class OrbitCameraRig3D {
         setElevation(currentElevation + deltaY * DRAG_SENSITIVITY);
     }
 
+    /** @return {@code degrees} clamped to the dome's allowed elevation range ({@value #MIN_ELEVATION} to {@value #MAX_ELEVATION}) */
     private double clampElevation(double degrees) {
         return Math.max(MIN_ELEVATION, Math.min(MAX_ELEVATION, degrees));
     }
@@ -159,6 +161,7 @@ public class OrbitCameraRig3D {
         elevationRotate.setAngle(-currentElevation);
     }
 
+    /** Places {@link #targetPivot} directly at {@code target}, with no animation -- used only for the rig's initial position. */
     private void moveTargetInstantly(Point3D target) {
         targetPivot.setTranslateX(target.getX());
         targetPivot.setTranslateY(target.getY());
@@ -192,6 +195,7 @@ public class OrbitCameraRig3D {
         timeline.play();
     }
 
+    /** @return the fixed distance between the camera and whatever point it's orbiting */
     public double getRadius() {
         return radius;
     }
